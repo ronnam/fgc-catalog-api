@@ -1,22 +1,22 @@
 <Solution>
   <Folder Name="/src/" />
   <Folder Name="/src/Fgc.Catalog.Api/">
-    <Project Path="src/Fgc.Catalog.Api/Fgc.Catalog.Api/Fgc.Catalog.Api.csproj" Id="aaca672a-f576-49d3-a1e8-b1fb4cbb05c7" />
+    <Project Path="src/Fgc.Catalog.Api/Fgc.Catalog.Api.csproj" />
   </Folder>
   <Folder Name="/src/Fgc.Catalog.Application/">
-    <Project Path="src/Fgc.Catalog.Application/Fgc.Catalog.Application/Fgc.Catalog.Application.csproj" Id="215649be-064f-4493-992d-be6c559738b9" />
+    <Project Path="src/Fgc.Catalog.Application/Fgc.Catalog.Application.csproj" />
   </Folder>
   <Folder Name="/src/Fgc.Catalog.Domain/">
-    <Project Path="src/Fgc.Catalog.Domain/Fgc.Catalog.Domain/Fgc.Catalog.Domain.csproj" Id="e59a1183-a040-4c7c-82df-30b7fc54f55e" />
+    <Project Path="src/Fgc.Catalog.Domain/Fgc.Catalog.Domain.csproj" />
   </Folder>
   <Folder Name="/src/Fgc.Catalog.Infrastructure/">
-    <Project Path="src/Fgc.Catalog.Infrastructure/Fgc.Catalog.Infrastructure/Fgc.Catalog.Infrastructure.csproj" Id="9b9c9041-121e-48b5-b7fb-d3739fac3661" />
+    <Project Path="src/Fgc.Catalog.Infrastructure/Fgc.Catalog.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Fgc.Catalog.IntegrationTests/">
-    <Project Path="tests/Fgc.Catalog.IntegrationTests/Fgc.Catalog.IntegrationTests/Fgc.Catalog.IntegrationTests.csproj" Id="ff6e2f9c-a728-4f4f-917d-708dc5175827" />
+    <Project Path="tests/Fgc.Catalog.IntegrationTests/Fgc.Catalog.IntegrationTests.csproj" />
   </Folder>
   <Folder Name="/tests/Fgc.Catalog.Tests/">
-    <Project Path="tests/Fgc.Catalog.Tests/Fgc.Catalog.Tests/Fgc.Catalog.Tests.csproj" Id="ed0a7860-b78a-4f7a-87bc-8bc7af9ae203" />
+    <Project Path="tests/Fgc.Catalog.Tests/Fgc.Catalog.Tests.csproj" />
   </Folder>
 </Solution>
