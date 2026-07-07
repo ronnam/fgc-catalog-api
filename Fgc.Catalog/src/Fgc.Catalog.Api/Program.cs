@@ -1,7 +1,9 @@
+using Fgc.Catalog.Application.Consumers;
 using Fgc.Catalog.Application.Interfaces;
 using Fgc.Catalog.Application.Services;
 using Fgc.Catalog.Infrastructure.Persistence;
 using Fgc.Catalog.Infrastructure.Repositories;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -73,6 +75,25 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// Configuração do MassTransit com RabbitMQ
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<UserCreatedEventConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/", h =>
+        {
+            h.Username("admin");
+            h.Password("admin");
+        });
+
+        cfg.ReceiveEndpoint("catalog-user-created-queue", e =>
+        {
+            e.ConfigureConsumer<UserCreatedEventConsumer>(context);
+        });
+    });
+});
 // ============================================================
 
 var app = builder.Build();
