@@ -89,7 +89,7 @@ builder.Services.AddMassTransit(x =>
             h.Password("admin");
         });
 
-        // Nome da fila que o Catalog vai escutar
+		// Nome da fila que o Catalog vai escutar	
         cfg.ReceiveEndpoint("catalog-user-created-queue", e =>
         {
             e.ConfigureConsumer<UserCreatedEventConsumer>(context);
