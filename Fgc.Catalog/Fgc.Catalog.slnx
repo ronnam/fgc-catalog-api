@@ -1,34 +1,22 @@
 <Solution>
   <Folder Name="/src/" />
   <Folder Name="/src/Fgc.Catalog.Api/">
-    <Project Path="src/Fgc.Catalog.Api/Fgc.Catalog.Api.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
+    <Project Path="src/Fgc.Catalog.Api/Fgc.Catalog.Api.csproj" />
   </Folder>
   <Folder Name="/src/Fgc.Catalog.Application/">
-    <Project Path="src/Fgc.Catalog.Application/Fgc.Catalog.Application.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
+    <Project Path="src/Fgc.Catalog.Application/Fgc.Catalog.Application.csproj" />
   </Folder>
   <Folder Name="/src/Fgc.Catalog.Domain/">
-    <Project Path="src/Fgc.Catalog.Domain/Fgc.Catalog.Domain.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
+    <Project Path="src/Fgc.Catalog.Domain/Fgc.Catalog.Domain.csproj" />
   </Folder>
   <Folder Name="/src/Fgc.Catalog.Infrastructure/">
-    <Project Path="src/Fgc.Catalog.Infrastructure/Fgc.Catalog.Infrastructure.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
+    <Project Path="src/Fgc.Catalog.Infrastructure/Fgc.Catalog.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Fgc.Catalog.IntegrationTests/">
-    <Project Path="tests/Fgc.Catalog.IntegrationTests/Fgc.Catalog.IntegrationTests.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
+    <Project Path="tests/Fgc.Catalog.IntegrationTests/Fgc.Catalog.IntegrationTests.csproj" />
   </Folder>
   <Folder Name="/tests/Fgc.Catalog.Tests/">
-    <Project Path="tests/Fgc.Catalog.Tests/Fgc.Catalog.Tests.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
+    <Project Path="tests/Fgc.Catalog.Tests/Fgc.Catalog.Tests.csproj" />
   </Folder>
 </Solution>

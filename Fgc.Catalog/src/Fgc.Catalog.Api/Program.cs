@@ -1,4 +1,4 @@
-using Fgc.Catalog.Application.Consumers;
+using Fgc.Catalog.Api.Consumers;
 using Fgc.Catalog.Application.Interfaces;
 using Fgc.Catalog.Application.Services;
 using Fgc.Catalog.Infrastructure.Persistence;
@@ -75,10 +75,10 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// D. MassTransit com RabbitMQ
+// E. MassTransit / RabbitMQ
 builder.Services.AddMassTransit(x =>
 {
-    // 1. Aviso que tem um leitor.
+    // Registra o consumer
     x.AddConsumer<UserCreatedEventConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
@@ -89,7 +89,7 @@ builder.Services.AddMassTransit(x =>
             h.Password("admin");
         });
 
-        // 2. Cria-se a fila e liga-se o leitor nela.
+		// Nome da fila que o Catalog vai escutar	
         cfg.ReceiveEndpoint("catalog-user-created-queue", e =>
         {
             e.ConfigureConsumer<UserCreatedEventConsumer>(context);

@@ -7,6 +7,7 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
     : DbContext(options)
 {
     public DbSet<Game> Games => Set<Game>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
