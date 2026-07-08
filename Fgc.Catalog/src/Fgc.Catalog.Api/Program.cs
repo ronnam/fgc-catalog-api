@@ -1,7 +1,9 @@
+using Fgc.Catalog.Api.Consumers;
 using Fgc.Catalog.Application.Interfaces;
 using Fgc.Catalog.Application.Services;
 using Fgc.Catalog.Infrastructure.Persistence;
 using Fgc.Catalog.Infrastructure.Repositories;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -70,6 +72,28 @@ builder.Services.AddSwaggerGen(c =>
             },
             Array.Empty<string>()
         }
+    });
+});
+
+// E. MassTransit / RabbitMQ
+builder.Services.AddMassTransit(x =>
+{
+    // Registra o consumer
+    x.AddConsumer<UserCreatedEventConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/", h =>
+        {
+            h.Username("admin");
+            h.Password("admin");
+        });
+
+        // Nome da fila que o Catalog vai escutar
+        cfg.ReceiveEndpoint("catalog-user-created-queue", e =>
+        {
+            e.ConfigureConsumer<UserCreatedEventConsumer>(context);
+        });
     });
 });
 
