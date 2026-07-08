@@ -83,7 +83,7 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host("localhost", "/", h =>
+        cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
         {
             h.Username("admin");
             h.Password("admin");
@@ -117,5 +117,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+    context.Database.EnsureCreated();
+}
+
 app.Run();
 public partial class Program { } // Para testes de integração
