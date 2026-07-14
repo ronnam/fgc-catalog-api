@@ -7,12 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Fgc.MessageContracts" Version="1.0.3" />
     <PackageReference Include="MassTransit" Version="8.5.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Fgc.Catalog.Domain\Fgc.Catalog.Domain.csproj" />
-    <ProjectReference Include="..\..\..\..\fgc-message-contracts\Fgc.MessageContracts\Fgc.MessageContracts.csproj" />
   </ItemGroup>
 
 </Project>

@@ -26,6 +26,7 @@ builder.Services.AddDbContext<CatalogDbContext>(options =>
 
 // B. Injeção de Dependências (Repositories)
 builder.Services.AddScoped<IGameRepository, GameRepository>();
+builder.Services.AddScoped<IUserLibraryRepository, UserLibraryRepository>();
 
 // C. Injeção de Dependências (Services)
 builder.Services.AddScoped<GameService>();
@@ -79,6 +80,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<UserCreatedEventConsumer>();
+    x.AddConsumer<PaymentProcessedEventConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -91,6 +93,10 @@ builder.Services.AddMassTransit(x =>
         cfg.ReceiveEndpoint("catalog-user-created-queue", e =>
         {
             e.ConfigureConsumer<UserCreatedEventConsumer>(context);
+        });
+        cfg.ReceiveEndpoint("catalog-payment-processed-queue", e => 
+        {
+            e.ConfigureConsumer<PaymentProcessedEventConsumer>(context);
         });
     });
 });
