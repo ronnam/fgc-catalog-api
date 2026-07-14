@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fgc-catalog-api-config
+  labels:
+    app: fgc-catalog-api
+data:
+  RabbitMq__Host: "rabbitmq"
+  Jwt__Issuer: "Fgc.UsersAPI"
+  Jwt__Audience: "Fgc.CatalogAPI"
