@@ -67,7 +67,7 @@ namespace Fgc.Catalog.IntegrationTests.Controllers
         public async Task CreateGame_WithValidDataAndAdminToken_Returns201()
         {             
             // Arrange
-            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma" };
+            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma", Price = 59.99m };
             var token = GenerateAdminToken();
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -89,7 +89,7 @@ namespace Fgc.Catalog.IntegrationTests.Controllers
             var token = GenerateAdminToken();
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var request = new GameRequest { Title = "", Category = "Plataforma" };
+            var request = new GameRequest { Title = "", Category = "Plataforma", Price = 59.99m };
 
             // Act
             var response = await _client.PostAsJsonAsync("/games", request);
@@ -102,7 +102,7 @@ namespace Fgc.Catalog.IntegrationTests.Controllers
         public async Task CreateGame_WithoutToken_Returns401()
         {
             // Arrange - sem token
-            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma" };
+            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma", Price = 59.99m };
 
             // Act
             var response = await _client.PostAsJsonAsync("/games", request);
@@ -132,7 +132,7 @@ namespace Fgc.Catalog.IntegrationTests.Controllers
             );
             var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenString);
-            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma" };
+            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma", Price = 59.99m };
 
             // Act
             var response = await _client.PostAsJsonAsync("/games", request);
@@ -148,8 +148,8 @@ namespace Fgc.Catalog.IntegrationTests.Controllers
             var token = GenerateAdminToken();
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var gamne1 = new GameRequest { Title = "Super Mario", Category = "Plataforma" };
-            var gamne2 = new GameRequest { Title = "FIFA 2026", Category = "Esporte" };
+            var gamne1 = new GameRequest { Title = "Super Mario", Category = "Plataforma", Price = 59.99m };
+            var gamne2 = new GameRequest { Title = "FIFA 2026", Category = "Esporte", Price = 59.99m };
 
             await _client.PostAsJsonAsync("/games", gamne1);
             await _client.PostAsJsonAsync("/games", gamne2);
@@ -172,7 +172,7 @@ namespace Fgc.Catalog.IntegrationTests.Controllers
             var token = GenerateAdminToken();
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma" };
+            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma", Price = 59.99m };
             var createResponse = await _client.PostAsJsonAsync("/games", request);
             var createdGame = await createResponse.Content.ReadFromJsonAsync<GameResponse>();
 
@@ -210,11 +210,11 @@ namespace Fgc.Catalog.IntegrationTests.Controllers
             var token = GenerateAdminToken();
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma" };
+            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma", Price = 59.99m };
             var createResponse = await _client.PostAsJsonAsync("/games", request);
             var createdGame = await createResponse.Content.ReadFromJsonAsync<GameResponse>();
 
-            var updateRequest = new GameRequest { Title = "Super Mario Updated", Category = "Plataforma" };
+            var updateRequest = new GameRequest { Title = "Super Mario Updated", Category = "Plataforma" , Price = 59.99m};
 
             Assert.NotNull(createdGame);
 
@@ -238,7 +238,7 @@ namespace Fgc.Catalog.IntegrationTests.Controllers
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var nonExistentId = Guid.NewGuid();
-            var updateRequest = new GameRequest { Title = "Super Mario", Category = "Plataforma" };
+            var updateRequest = new GameRequest { Title = "Super Mario", Category = "Plataforma", Price = 59.99m };
 
             // Act
             var response = await _client.PutAsJsonAsync($"/games/{nonExistentId}", updateRequest);
@@ -254,7 +254,7 @@ namespace Fgc.Catalog.IntegrationTests.Controllers
             var token = GenerateAdminToken();
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma" };
+            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma", Price = 59.99m };
             var createResponse = await _client.PostAsJsonAsync("/games", request);
             var createdGame = await createResponse.Content.ReadFromJsonAsync<GameResponse>();
 
@@ -287,7 +287,7 @@ namespace Fgc.Catalog.IntegrationTests.Controllers
         public async Task UpdateGame_WithoutToken_Returns401()
         {
             // Arrange - sem token
-            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma" };
+            var request = new GameRequest { Title = "Super Mario", Category = "Plataforma", Price = 59.99m };
 
             // Act
             var response = await _client.PutAsJsonAsync($"/games/{Guid.NewGuid()}", request);
