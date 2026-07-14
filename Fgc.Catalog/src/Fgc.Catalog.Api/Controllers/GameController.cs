@@ -3,13 +3,14 @@ using Fgc.Catalog.Application.Services;
 using Fgc.Catalog.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Fgc.Catalog.Application.DTOS.Purchases;
 
 namespace Fgc.Catalog.API.Controllers;
 
 [ApiController]
 [Route("games")]
 [Tags("Games")]
-public class GameController(GameService gameService) : ControllerBase
+public class GameController(GameService gameService, PurchaseService purchaseService) : ControllerBase
 {
     
     /// <summary>
@@ -90,6 +91,28 @@ public class GameController(GameService gameService) : ControllerBase
         {
             await gameService.DeleteAsync(id);
             return NoContent();
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (CatalogDomainException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Purchase a game (authenticated users)
+    /// </summary>
+    [HttpPost("{id:guid}/purchase")]
+    [Authorize]
+    public async Task<IActionResult> PurchaseGame(Guid id, [FromQuery] Guid userId)
+    {
+        try
+        {
+            var response = await purchaseService.PurchaseAsync(userId, id);
+            return Ok(response);
         }
         catch (NotFoundException ex)
         {
