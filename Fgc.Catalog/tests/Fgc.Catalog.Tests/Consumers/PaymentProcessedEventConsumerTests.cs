@@ -43,7 +43,7 @@ namespace Fgc.Catalog.Tests.Consumers
             var context = Mock.Of<ConsumeContext<PaymentProcessedEvent>>(c => c.Message == message);
 
             _gameRepoMock.Setup(r => r.GetByIdAsync(gameId))
-                .ReturnsAsync(Game.Create("Test Game", "Action"));
+                .ReturnsAsync(Game.Create("Test Game", "Action", 100m));
             _userLibraryRepoMock.Setup(r => r.ExistsAsync(userId, gameId))
                 .ReturnsAsync(false);
 
@@ -131,7 +131,7 @@ namespace Fgc.Catalog.Tests.Consumers
             var context = Mock.Of<ConsumeContext<PaymentProcessedEvent>>(c => c.Message == message);
 
             _gameRepoMock.Setup(r => r.GetByIdAsync(gameId))
-                .ReturnsAsync(Game.Create("Test Game", "Action"));
+                .ReturnsAsync(Game.Create("Test Game", "Action",50m));
             _userLibraryRepoMock.Setup(r => r.ExistsAsync(userId, gameId))
                 .ReturnsAsync(true);
 

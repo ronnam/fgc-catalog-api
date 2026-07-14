@@ -7,6 +7,8 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+
+
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
@@ -24,6 +26,7 @@ builder.Services.AddScoped<IGameRepository, GameRepository>();
 builder.Services.AddScoped<IUserLibraryRepository, UserLibraryRepository>();
 // C. Injeção de Dependências (Services)
 builder.Services.AddScoped<GameService>();
+builder.Services.AddScoped<PurchaseService>();
 // D. Autenticação JWT
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>

@@ -7,6 +7,7 @@ public class GameResponse
     public Guid Id { get; set; }
     public required string Title { get; set; }
     public required string Category { get; set; }
+    public decimal Price { get; set; }
 
     public static GameResponse FromEntity(Game game)
     {
@@ -14,7 +15,8 @@ public class GameResponse
         {
             Id = game.Id,
             Title = game.Title,
-            Category = game.Category
+            Category = game.Category,
+            Price = game.Price
         };
     }
 }
