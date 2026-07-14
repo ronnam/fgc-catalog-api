@@ -32,13 +32,13 @@ namespace Fgc.Catalog.IntegrationTests.Controllers
             context.Database.EnsureCreated();
         }
 
-        private StringContent CreateJsonContent(object obj)
+        private static StringContent CreateJsonContent(object obj)
         {
             var json = System.Text.Json.JsonSerializer.Serialize(obj);
             return new StringContent(json, Encoding.UTF8, "application/json");
         }
 
-        private string GenerateAdminToken()
+        private static string GenerateAdminToken()
         {
             var key = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes("FgcUsers-Auth-JWT-Key-2026-Strong-And-Secure")
