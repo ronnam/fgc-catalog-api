@@ -120,5 +120,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
+    context.Database.EnsureCreated();
+}
 app.Run();
 public partial class Program { } // Para testes de integração
