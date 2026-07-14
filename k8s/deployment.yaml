@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fgc-catalog-api
+  labels:
+    app: fgc-catalog-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fgc-catalog-api
+  template:
+    metadata:
+      labels:
+        app: fgc-catalog-api
+    spec:
+      containers:
+        - name: fgc-catalog-api
+          image: fgc-catalog-api:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: fgc-catalog-api-config
+            - secretRef:
+                name: fgc-catalog-api-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
