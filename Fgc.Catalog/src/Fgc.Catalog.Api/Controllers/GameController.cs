@@ -1,8 +1,6 @@
 ﻿using Fgc.Catalog.Application.DTOS.Games;
 using Fgc.Catalog.Application.Services;
-using Fgc.Catalog.Domain.Entities;
 using Fgc.Catalog.Domain.Exceptions;
-using Fgc.Catalog.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,15 +9,9 @@ namespace Fgc.Catalog.API.Controllers;
 [ApiController]
 [Route("games")]
 [Tags("Games")]
-public class GameController : ControllerBase
+public class GameController(GameService gameService) : ControllerBase
 {
-    private readonly GameService _gameService;
-
-    public GameController(GameService gameService)
-    {
-        _gameService = gameService;
-    }
-
+    
     /// <summary>
     /// Create a new game (only Admin)
     /// </summary>
@@ -29,7 +21,7 @@ public class GameController : ControllerBase
     {
         try
         {
-            var response = await _gameService.CreateAsync(request);
+            var response = await gameService.CreateAsync(request);
 
             return CreatedAtAction(nameof(GetGameById), new { id = response.Id }, response);
         }
@@ -46,7 +38,7 @@ public class GameController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllGames()
     {
-        var games = await _gameService.GetAllAsync();
+        var games = await gameService.GetAllAsync();
         return Ok(games);
     }
 
@@ -57,7 +49,7 @@ public class GameController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetGameById(Guid id)
     {
-        var game = await _gameService.GetByIdAsync(id);
+        var game = await gameService.GetByIdAsync(id);
         if (game == null)
             return NotFound(new {error = "Game not found"});
 
@@ -73,7 +65,7 @@ public class GameController : ControllerBase
     {
         try
         {
-            var response = await _gameService.UpdateAsync(id, request);
+            var response = await gameService.UpdateAsync(id, request);
             return Ok(response);
         }
         catch (NotFoundException ex)
@@ -96,7 +88,7 @@ public class GameController : ControllerBase
     {
         try
         {
-            await _gameService.DeleteAsync(id);
+            await gameService.DeleteAsync(id);
             return NoContent();
         }
         catch (NotFoundException ex)

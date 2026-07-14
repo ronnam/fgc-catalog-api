@@ -7,30 +7,23 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-
 var builder = WebApplication.CreateBuilder(args);
-
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
 // ============================================================
 // 1. CONFIGURAÇÕES DO MICROSSERVIÇO DE CATÁLOGO
 // ============================================================
-
 // A. Banco de Dados (Entity Framework Core)
 builder.Services.AddDbContext<CatalogDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("CatalogDb"))
 );
-
 // B. Injeção de Dependências (Repositories)
 builder.Services.AddScoped<IGameRepository, GameRepository>();
 builder.Services.AddScoped<IUserLibraryRepository, UserLibraryRepository>();
-
 // C. Injeção de Dependências (Services)
 builder.Services.AddScoped<GameService>();
-
 // D. Autenticação JWT
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
@@ -48,7 +41,6 @@ builder.Services.AddAuthentication("Bearer")
             )
         };
     });
-
 // Swagger com suporte a JWT
 builder.Services.AddSwaggerGen(c =>
 {
@@ -75,13 +67,11 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
-
-// Configuração do MassTransit com RabbitMQ
+// E. MassTransit / RabbitMQ
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<UserCreatedEventConsumer>();
     x.AddConsumer<PaymentProcessedEventConsumer>();
-
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
@@ -89,40 +79,35 @@ builder.Services.AddMassTransit(x =>
             h.Username("admin");
             h.Password("admin");
         });
-
         cfg.ReceiveEndpoint("catalog-user-created-queue", e =>
         {
             e.ConfigureConsumer<UserCreatedEventConsumer>(context);
         });
-        cfg.ReceiveEndpoint("catalog-payment-processed-queue", e => 
+        cfg.ReceiveEndpoint("catalog-payment-processed-queue", e =>
         {
             e.ConfigureConsumer<PaymentProcessedEventConsumer>(context);
         });
     });
 });
 // ============================================================
-
 var app = builder.Build();
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 app.UseHttpsRedirection();
-
 // ============================================================
 // 2. MIDDLEWARES DE SEGURANÇA
 // ============================================================
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+app.MapGet("/health", () => Results.Ok());
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
+    var context = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
     context.Database.EnsureCreated();
 }
 app.Run();

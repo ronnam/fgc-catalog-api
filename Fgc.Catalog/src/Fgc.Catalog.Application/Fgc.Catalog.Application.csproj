@@ -1,18 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Fgc.MessageContracts" Version="1.0.3" />
     <PackageReference Include="MassTransit" Version="8.5.2" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Fgc.Catalog.Domain\Fgc.Catalog.Domain.csproj" />
   </ItemGroup>
-
 </Project>
