@@ -1,7 +1,7 @@
 ﻿using Fgc.Catalog.Domain.Entities;
-using Fgc.Catalog.Infrastructure.Persistence;
 using Fgc.Catalog.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Fgc.Catalog.Infrastructure.Persistence;
 
 namespace Fgc.Catalog.Infrastructure.Repositories
 {
