@@ -92,6 +92,8 @@ builder.Services.AddMassTransit(x =>
         });
     });
 });
+// F. MongoDB (para eventos de integração)
+builder.Services.AddMongoCatalog(builder.Configuration);
 // ============================================================
 var app = builder.Build();
 // Configure the HTTP request pipeline.
