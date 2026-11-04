@@ -14,6 +14,10 @@ namespace Fgc.Catalog.Application.Interfaces
         /// </summary>
         Task<IReadOnlyList<GameReview>> GetByGameIdAsync(Guid gameId, CancellationToken cancellationToken = default);
 
-
+        ///<summary>
+        /// Busca a avalicação de um usuário específico para um jogo.
+        /// Usado para validar a regra "1 avaliação por usuário por jogo".
+        /// </summary>
+        Task<GameReview?> GetByGameAndUserAsync(Guid gameId, Guid userId, CancellationToken cancellationToken = default);
     }
 }

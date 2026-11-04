@@ -9,54 +9,58 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 
-var builder = WebApplication.CreateBuilder(args);
-// Add services to the container.
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-// ============================================================
-// 1. CONFIGURAÇÕES DO MICROSSERVIÇO DE CATÁLOGO
-// ============================================================
-// A. Banco de Dados (Entity Framework Core)
-builder.Services.AddDbContext<CatalogDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("CatalogDb"))
-);
-// B. Injeção de Dependências (Repositories)
-builder.Services.AddScoped<IGameRepository, GameRepository>();
-builder.Services.AddScoped<IUserLibraryRepository, UserLibraryRepository>();
-// C. Injeção de Dependências (Services)
-builder.Services.AddScoped<GameService>();
-builder.Services.AddScoped<PurchaseService>();
-// D. Autenticação JWT
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
+public partial class Program {
+    private static void Main(string[] args)
     {
-        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        var builder = WebApplication.CreateBuilder(args);
+        // Add services to the container.
+        builder.Services.AddControllers();
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
+        // ============================================================
+        // 1. CONFIGURAÇÕES DO MICROSSERVIÇO DE CATÁLOGO
+        // ============================================================
+        // A. Banco de Dados (Entity Framework Core)
+        builder.Services.AddDbContext<CatalogDbContext>(options =>
+            options.UseSqlite(builder.Configuration.GetConnectionString("CatalogDb"))
+        );
+        // B. Injeção de Dependências (Repositories)
+        builder.Services.AddScoped<IGameRepository, GameRepository>();
+        builder.Services.AddScoped<IUserLibraryRepository, UserLibraryRepository>();
+        // C. Injeção de Dependências (Services)
+        builder.Services.AddScoped<GameService>();
+        builder.Services.AddScoped<PurchaseService>();
+        builder.Services.AddScoped<GameReviewService>();
+        // D. Autenticação JWT
+        builder.Services.AddAuthentication("Bearer")
+            .AddJwtBearer("Bearer", options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
+                    )
+                };
+            });
+        // Swagger com suporte a JWT
+        builder.Services.AddSwaggerGen(c =>
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
-            )
-        };
-    });
-// Swagger com suporte a JWT
-builder.Services.AddSwaggerGen(c =>
-{
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "Insira o token JWT no formato: Bearer {seu token}",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Description = "Insira o token JWT no formato: Bearer {seu token}",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "Bearer"
+            });
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
         {
             new OpenApiSecurityScheme
             {
@@ -68,52 +72,55 @@ builder.Services.AddSwaggerGen(c =>
             },
             Array.Empty<string>()
         }
-    });
-});
-// E. MassTransit / RabbitMQ
-builder.Services.AddMassTransit(x =>
-{
-    x.AddConsumer<UserCreatedEventConsumer>();
-    x.AddConsumer<PaymentProcessedEventConsumer>();
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
-        {
-            h.Username("admin");
-            h.Password("admin");
+            });
         });
-        cfg.ReceiveEndpoint("catalog-user-created-queue", e =>
+        // E. MassTransit / RabbitMQ
+        builder.Services.AddMassTransit(x =>
         {
-            e.ConfigureConsumer<UserCreatedEventConsumer>(context);
+            x.AddConsumer<UserCreatedEventConsumer>();
+            x.AddConsumer<PaymentProcessedEventConsumer>();
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+                {
+                    h.Username("admin");
+                    h.Password("admin");
+                });
+                cfg.ReceiveEndpoint("catalog-user-created-queue", e =>
+                {
+                    e.ConfigureConsumer<UserCreatedEventConsumer>(context);
+                });
+                cfg.ReceiveEndpoint("catalog-payment-processed-queue", e =>
+                {
+                    e.ConfigureConsumer<PaymentProcessedEventConsumer>(context);
+                });
+            });
         });
-        cfg.ReceiveEndpoint("catalog-payment-processed-queue", e =>
+        // F. MongoDB (para eventos de integração)
+        builder.Services.AddMongoCatalog(builder.Configuration);
+        // ============================================================
+        var app = builder.Build();
+        // Configure the HTTP request pipeline.
+        if (app.Environment.IsDevelopment())
         {
-            e.ConfigureConsumer<PaymentProcessedEventConsumer>(context);
-        });
-    });
-});
-// F. MongoDB (para eventos de integração)
-builder.Services.AddMongoCatalog(builder.Configuration);
-// ============================================================
-var app = builder.Build();
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-app.UseHttpsRedirection();
-// ============================================================
-// 2. MIDDLEWARES DE SEGURANÇA
-// ============================================================
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
-app.MapGet("/health", () => Results.Ok());
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
-    context.Database.EnsureCreated();
-}
-app.Run();
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
+        app.UseHttpsRedirection();
+        // ============================================================
+        // 2. MIDDLEWARES DE SEGURANÇA
+        // ============================================================
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.MapControllers();
+        app.MapGet("/health", () => Results.Ok());
+        using (var scope = app.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+            context.Database.Migrate();
+        }
+        app.Run();
+    }
+} // Para testes de integração
+
 public partial class Program { } // Para testes de integração

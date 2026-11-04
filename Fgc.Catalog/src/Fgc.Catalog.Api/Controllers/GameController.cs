@@ -4,13 +4,15 @@ using Fgc.Catalog.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Fgc.Catalog.Application.DTOS.Purchases;
+using Fgc.Catalog.Application.DTOS.Reviews;
+using System.Security.Claims;
 
 namespace Fgc.Catalog.API.Controllers;
 
 [ApiController]
 [Route("games")]
 [Tags("Games")]
-public class GameController(GameService gameService, PurchaseService purchaseService) : ControllerBase
+public class GameController(GameService gameService, PurchaseService purchaseService, GameReviewService gameReviewService) : ControllerBase
 {
     
     /// <summary>
@@ -107,11 +109,15 @@ public class GameController(GameService gameService, PurchaseService purchaseSer
     /// </summary>
     [HttpPost("{id:guid}/purchase")]
     [Authorize]
-    public async Task<IActionResult> PurchaseGame(Guid id, [FromQuery] Guid userId)
+    public async Task<IActionResult> PurchaseGame(Guid id)
     {
+        var userId = GetAuthenticatedUserId();
+        if (userId is null)
+            return Unauthorized(new { error = "Invalid user token." });
+        
         try
         {
-            var response = await purchaseService.PurchaseAsync(userId, id);
+            var response = await purchaseService.PurchaseAsync(userId.Value, id);
             return Ok(response);
         }
         catch (NotFoundException ex)
@@ -122,5 +128,54 @@ public class GameController(GameService gameService, PurchaseService purchaseSer
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    ///<summary>
+    /// List reviews of a game (public)
+    ///</summary>
+    [HttpGet("{id:guid}/reviews")]
+    public async Task<IActionResult> GetReviews(Guid id)
+    {
+        var reviews = await gameReviewService.GetByGameAsync(id);
+        return Ok(reviews);
+    }        
+
+    ///<summary>
+    /// Create a review for a game (authenticated users)
+    ///</summary>
+    [HttpPost("{id:guid}/reviews")]
+    [Authorize]
+    public async Task<IActionResult> CreateReview(Guid id, [FromBody] GameReviewRequest request)
+    {
+        var userId = GetAuthenticatedUserId();
+        if (userId is null)
+            return Unauthorized(new { error = "Invalid user token." });
+
+        try
+        {
+            var response = await gameReviewService.CreateAsync(id, userId.Value, request);
+            return CreatedAtAction(nameof(GetReviews), new { id }, response);
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (CatalogDomainException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    ///<summary>
+    /// Extracts the user id from the JWT bearer token.
+    /// Tries the mapped claim first, then the raw "sub" claim.
+    ///</summary>
+    private Guid? GetAuthenticatedUserId()
+    {
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value
+            ?? User.FindFirst("nameId")?.Value;
+
+        return Guid.TryParse(claim, out var userId) ? userId : null;
     }
 }

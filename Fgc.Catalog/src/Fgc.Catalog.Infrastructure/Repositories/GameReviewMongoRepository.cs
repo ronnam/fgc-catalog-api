@@ -14,6 +14,15 @@ namespace Fgc.Catalog.Infrastructure.Repositories
             await _collection.InsertOneAsync(review, cancellationToken: cancellationToken);
         }
 
+        public async Task<GameReview?> GetByGameAndUserAsync(Guid gameId, Guid userId, CancellationToken cancellationToken = default)
+        {
+            var filter = Builders<GameReview>.Filter.And(
+                Builders<GameReview>.Filter.Eq(r => r.GameId, gameId),
+                Builders<GameReview>.Filter.Eq(r => r.UserId, userId)
+            );
+            return await _collection.Find(filter).FirstOrDefaultAsync(cancellationToken);
+        }
+
         public async Task<IReadOnlyList<GameReview>> GetByGameIdAsync(Guid gameId, CancellationToken cancellationToken = default)
         {
             var filter = Builders<GameReview>.Filter.Eq(r => r.GameId, gameId);
