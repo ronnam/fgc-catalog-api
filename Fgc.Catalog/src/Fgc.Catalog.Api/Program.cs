@@ -1,3 +1,4 @@
+#pragma warning disable CA1050
 using Fgc.Catalog.Application.Consumers;
 using Fgc.Catalog.Application.Interfaces;
 using Fgc.Catalog.Application.Services;
@@ -27,11 +28,17 @@ public partial class Program {
         // B. Injeção de Dependências (Repositories)
         builder.Services.AddScoped<IGameRepository, GameRepository>();
         builder.Services.AddScoped<IUserLibraryRepository, UserLibraryRepository>();
-        // C. Injeção de Dependências (Services)
+        // C. Injeção de Dependências (Services)        
         builder.Services.AddScoped<GameService>();
         builder.Services.AddScoped<PurchaseService>();
         builder.Services.AddScoped<GameReviewService>();
-        // D. Autenticação JWT
+        // D. Cache Distribuído (Redis)
+        builder.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = builder.Configuration.GetConnectionString("Redis");
+            options.InstanceName = "fgc-catalog:";
+        });
+        // E. Autenticação JWT
         builder.Services.AddAuthentication("Bearer")
             .AddJwtBearer("Bearer", options =>
             {
@@ -74,7 +81,7 @@ public partial class Program {
         }
             });
         });
-        // E. MassTransit / RabbitMQ
+        // MassTransit / RabbitMQ
         builder.Services.AddMassTransit(x =>
         {
             x.AddConsumer<UserCreatedEventConsumer>();
@@ -117,7 +124,10 @@ public partial class Program {
         using (var scope = app.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
-            context.Database.Migrate();
+            if (context.Database.IsRelational())
+            {
+                context.Database.Migrate();
+            }
         }
         app.Run();
     }
