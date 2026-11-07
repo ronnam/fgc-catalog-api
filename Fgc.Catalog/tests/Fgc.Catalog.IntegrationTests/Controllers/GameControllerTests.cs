@@ -258,21 +258,16 @@ namespace Fgc.Catalog.IntegrationTests.Controllers
             var createResponse = await _client.PostAsJsonAsync("/games", request);
             var createdGame = await createResponse.Content.ReadFromJsonAsync<GameResponse>();
 
-            var response = await _client.DeleteAsync($"/games/{createdGame.Id}");
-            var errorBody = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($">>> DELETE {response.StatusCode}: {errorBody}");
+            Assert.NotNull(createdGame);
 
-            //Assert.NotNull(createdGame);
-            //Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+            // Act
+            var response = await _client.DeleteAsync($"/games/{createdGame.Id}");
+
+            // Assert
+            var errorBody = await response.Content.ReadAsStringAsync();
             Assert.True(
                 response.StatusCode == HttpStatusCode.NoContent,
                 $"Esperado NoContent, obteve {(int)response.StatusCode}. Corpo: {errorBody}");
-
-            // Act
-            //var response = await _client.DeleteAsync($"/games/{createdGame.Id}");
-
-            // Assert
-            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
 
         [Fact]
