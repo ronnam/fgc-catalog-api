@@ -1,0 +1,61 @@
+﻿using Elastic.Clients.Elasticsearch;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
+namespace Fgc.Catalog.Infrastructure.Search
+{
+    internal sealed class GameSearchIndexInitializer(
+        ElasticsearchClient client,
+        ILogger<GameSearchIndexInitializer> logger) : IHostedService
+    {
+        public async Task StartAsync(CancellationToken ct)
+        {
+            for (var attempt = 1; attempt <= 5; attempt++)
+            {
+                try
+                {
+                    var exists = await client.Indices.ExistsAsync(
+                        ElasticsearchExtensions.IndexName, ct);
+
+                    if (exists.Exists)
+                    {
+                        logger.LogInformation("Índice '{Index}' já existe.",
+                            ElasticsearchExtensions.IndexName);
+                        return;
+                    }
+
+                    var create = await client.Indices.CreateAsync(
+                        ElasticsearchExtensions.IndexName, c => c
+                            .Mappings(m => m
+                                .Properties<GameSearchDocument>(p => p
+                                    .Keyword(k => k.Id)
+                                    .Text(t => t.Title, td => td.Analyzer("portuguese"))
+                                    .Text(t => t.Category, td => td.Analyzer("portuguese"))
+                                    .DoubleNumber(d => d.Price))), ct);
+
+                    if (create.IsValidResponse)
+                    {
+                        logger.LogInformation("Índice '{Index}' criado.",
+                            ElasticsearchExtensions.IndexName);
+                        return;
+                    }
+
+                    logger.LogWarning("Tentativa {Attempt}/5 falhou ao criar índice: {Reason}",
+                        attempt, create.DebugInformation);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Tentativa {Attempt}/5 — Elasticsearch indisponível.", attempt);
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)), ct);
+            }
+
+            logger.LogError(
+                "Elasticsearch não respondeu após 5 tentativas. " +
+                "A API continua operando com o banco relacional; a busca ficará indisponível.");
+        }
+
+        public Task StopAsync(CancellationToken ct) => Task.CompletedTask;
+    }
+}

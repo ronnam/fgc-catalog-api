@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Fgc.Catalog.Application.Services;
 
-public class GameService(IGameRepository repository, IDistributedCache cache, ILogger<GameService> logger)
+public class GameService(IGameRepository repository, IDistributedCache cache, ILogger<GameService> logger, IGameSearchService search)
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(60);
 
@@ -21,6 +21,7 @@ public class GameService(IGameRepository repository, IDistributedCache cache, IL
 
         var game = Game.Create(request.Title, request.Category, request.Price);
         await repository.AddAsync(game);
+        await search.IndexAsync(game);
 
         return GameResponse.FromEntity(game);
     }
@@ -64,6 +65,8 @@ public class GameService(IGameRepository repository, IDistributedCache cache, IL
 
         await cache.RemoveAsync(CacheKey(id));
 
+        await search.IndexAsync(game);
+
         return GameResponse.FromEntity(game);
     }
 
@@ -74,5 +77,6 @@ public class GameService(IGameRepository repository, IDistributedCache cache, IL
 
         await repository.DeleteAsync(game);
         await cache.RemoveAsync(CacheKey(id));
+        await search.DeleteAsync(id);
     }
 }

@@ -3,16 +3,16 @@ using Fgc.Catalog.Application.Services;
 using Fgc.Catalog.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Fgc.Catalog.Application.DTOS.Purchases;
 using Fgc.Catalog.Application.DTOS.Reviews;
 using System.Security.Claims;
+using Fgc.Catalog.Application.Interfaces;
 
 namespace Fgc.Catalog.API.Controllers;
 
 [ApiController]
 [Route("games")]
 [Tags("Games")]
-public class GameController(GameService gameService, PurchaseService purchaseService, GameReviewService gameReviewService) : ControllerBase
+public class GameController(GameService gameService, PurchaseService purchaseService, GameReviewService gameReviewService, IGameSearchService search) : ControllerBase
 {
     
     /// <summary>
@@ -43,6 +43,22 @@ public class GameController(GameService gameService, PurchaseService purchaseSer
     {
         var games = await gameService.GetAllAsync();
         return Ok(games);
+    }
+
+    /// <summary>
+    /// Full-text search with fuzzy tolerance and relevance ranking (Fase 4)
+    /// </summary>
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchGames(
+        [FromQuery] string q,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        if (string.IsNullOrWhiteSpace(q))
+            return BadRequest(new { error = "Query parameter 'q' is required." });
+
+        var results = await search.SearchAsync(q, page, pageSize);
+        return Ok(new { total = results.Count, query = q, results });
     }
 
     /// <summary>

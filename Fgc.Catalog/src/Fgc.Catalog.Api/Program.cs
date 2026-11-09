@@ -4,6 +4,7 @@ using Fgc.Catalog.Application.Interfaces;
 using Fgc.Catalog.Application.Services;
 using Fgc.Catalog.Infrastructure.Persistence;
 using Fgc.Catalog.Infrastructure.Repositories;
+using Fgc.Catalog.Infrastructure.Search;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -105,6 +106,8 @@ public partial class Program {
         });
         // F. MongoDB (para eventos de integração)
         builder.Services.AddMongoCatalog(builder.Configuration);
+        // G. Elasticsearch
+        builder.Services.AddElasticsearchCatalog(builder.Configuration);
         // ============================================================
         var app = builder.Build();
         // Configure the HTTP request pipeline.
@@ -113,14 +116,22 @@ public partial class Program {
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-        app.UseHttpsRedirection();
+        app.UseHttpsRedirection();        
         // ============================================================
         // 2. MIDDLEWARES DE SEGURANÇA
         // ============================================================
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
-        app.MapGet("/health", () => Results.Ok());
+        app.MapGet("/health", async (IGameSearchService search) =>
+        {
+            var es = await search.IsAvailableAsync();
+            return Results.Ok(new
+            {
+                status = "Healthy",
+                dependencies = new { elasticsearch = es ? "up" : "down" }
+            });
+        });
         using (var scope = app.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
