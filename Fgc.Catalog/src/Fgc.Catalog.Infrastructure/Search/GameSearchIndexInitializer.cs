@@ -4,65 +4,100 @@ using Microsoft.Extensions.Logging;
 
 namespace Fgc.Catalog.Infrastructure.Search;
 
-internal sealed class GameSearchIndexInitializer : IHostedService
+internal sealed class GameSearchIndexInitializer(
+    ElasticsearchClient client,
+    ILogger<GameSearchIndexInitializer> logger) : IHostedService
 {
-    private readonly ElasticsearchClient _client;
-    private readonly ILogger<GameSearchIndexInitializer> _logger;
-
-    public GameSearchIndexInitializer(
-        ElasticsearchClient client,
-        ILogger<GameSearchIndexInitializer> logger)
-    {
-        _client = client;
-        _logger = logger;
-    }
+    private const int MaxAttempts = 5;
+    private const int MaxBackoffSeconds = 5;
 
     public async Task StartAsync(CancellationToken ct)
     {
-        for (var attempt = 1; attempt <= 5; attempt++)
+        for (var attempt = 1; attempt <= MaxAttempts; attempt++)
         {
+            // Shutdown legítimo: não é falha, é o host fechando.
+            if (ct.IsCancellationRequested)
+            {
+                logger.LogInformation(
+                    "Inicializacao do indice cancelada pelo host (shutdown).");
+                return;
+            }
+
             try
             {
-                var exists = await _client.Indices.ExistsAsync(
+                var exists = await client.Indices.ExistsAsync(
                     ElasticsearchExtensions.IndexName, ct);
 
-                if (exists.Exists)
+                if (!exists.IsValidResponse)
                 {
-                    _logger.LogInformation("Indice '{Index}' ja existe.",
+                    logger.LogWarning(
+                        "Tentativa {Attempt}/{Max}: consulta ao indice retornou resposta invalida. {Reason}",
+                        attempt, MaxAttempts, exists.DebugInformation);
+                }
+                else if (exists.Exists)
+                {
+                    logger.LogInformation("Indice '{Index}' ja existe.",
                         ElasticsearchExtensions.IndexName);
                     return;
                 }
-
-                var create = await _client.Indices.CreateAsync(
-                    ElasticsearchExtensions.IndexName, c => c
-                        .Mappings(m => m
-                            .Properties<GameSearchDocument>(p => p
-                                .Keyword(k => k.Id)
-                                .Text(t => t.Title, td => td.Analyzer("portuguese"))
-                                .Text(t => t.Category, td => td.Analyzer("portuguese"))
-                                .DoubleNumber(d => d.Price))), ct);
-
-                if (create.IsValidResponse)
+                else
                 {
-                    _logger.LogInformation("Indice '{Index}' criado.",
-                        ElasticsearchExtensions.IndexName);
-                    return;
-                }
+                    var create = await client.Indices.CreateAsync(
+                        ElasticsearchExtensions.IndexName, c => c
+                            .Mappings(m => m
+                                .Properties<GameSearchDocument>(p => p
+                                    .Keyword(k => k.Id)
+                                    .Text(t => t.Title, td => td.Analyzer("portuguese"))
+                                    .Text(t => t.Category, td => td.Analyzer("portuguese"))
+                                    .DoubleNumber(d => d.Price))), ct);
 
-                _logger.LogWarning("Tentativa {Attempt}/5 falhou ao criar indice: {Reason}",
-                    attempt, create.DebugInformation);
+                    if (create.IsValidResponse)
+                    {
+                        logger.LogInformation("Indice '{Index}' criado.",
+                            ElasticsearchExtensions.IndexName);
+                        return;
+                    }
+
+                    logger.LogWarning(
+                        "Tentativa {Attempt}/{Max} falhou ao criar indice: {Reason}",
+                        attempt, MaxAttempts, create.DebugInformation);
+                }
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // Manuseado acima no próximo loop (ct.IsCancellationRequested).
+                logger.LogInformation(
+                    "Inicializacao do indice cancelada durante a tentativa {Attempt}.", attempt);
+                return;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Tentativa {Attempt}/5 - Elasticsearch indisponivel.", attempt);
+                logger.LogWarning(ex,
+                    "Tentativa {Attempt}/{Max}: Elasticsearch indisponivel.", attempt, MaxAttempts);
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)), ct);
+            if (attempt == MaxAttempts)
+                break;
+
+            // Backoff curto e com token de curta duracao:
+            // se o host cancelar, encerramos limpo em vez de propagar excecao.
+            var backoff = TimeSpan.FromSeconds(Math.Min(MaxBackoffSeconds, attempt));
+            try
+            {
+                await Task.Delay(backoff, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                logger.LogInformation(
+                    "Inicializacao do indice interrompida por shutdown do host.");
+                return;
+            }
         }
 
-        _logger.LogError(
-            "Elasticsearch nao respondeu apos 5 tentativas. " +
-            "A API continua operando com o banco relacional; a busca ficara indisponivel.");
+        logger.LogError(
+            "Elasticsearch nao respondeu apos {Max} tentativas. " +
+            "A API continua operando; a busca fuzzy ficara degradada ate o servico ser restabelecido.",
+            MaxAttempts);
     }
 
     public Task StopAsync(CancellationToken ct) => Task.CompletedTask;

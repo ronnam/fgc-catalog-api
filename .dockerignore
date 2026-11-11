@@ -1,0 +1,10 @@
+**/.vs/
+**/bin/
+**/obj/
+**/*.user
+**/.vsidx
+.git/
+.github/
+**/*.bak
+**/estrutura-catalog.txt
+**/swagger.json
