@@ -366,3 +366,4 @@ appsettings.Development.json
 
 # Segredos locais
 appsettings.Development.json
+*.bak
