@@ -370,3 +370,7 @@ appsettings.Development.json
 
 # Excecao: pacotes NuGet locais para restore no CI
 !LocalPackages/*.nupkg
+
+# Configuração local
+appsettings.Development.json
+*.dev.db

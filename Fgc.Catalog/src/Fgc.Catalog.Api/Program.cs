@@ -9,36 +9,44 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Prometheus;
 
-
-public partial class Program {
+public partial class Program
+{
     private static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
         // Add services to the container.
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+
         // ============================================================
         // 1. CONFIGURAÇÕES DO MICROSSERVIÇO DE CATÁLOGO
         // ============================================================
+
         // A. Banco de Dados (Entity Framework Core)
         builder.Services.AddDbContext<CatalogDbContext>(options =>
             options.UseSqlite(builder.Configuration.GetConnectionString("CatalogDb"))
         );
+
         // B. Injeção de Dependências (Repositories)
         builder.Services.AddScoped<IGameRepository, GameRepository>();
         builder.Services.AddScoped<IUserLibraryRepository, UserLibraryRepository>();
-        // C. Injeção de Dependências (Services)        
+
+        // C. Injeção de Dependências (Services)
         builder.Services.AddScoped<GameService>();
         builder.Services.AddScoped<PurchaseService>();
         builder.Services.AddScoped<GameReviewService>();
+
         // D. Cache Distribuído (Redis)
         builder.Services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = builder.Configuration.GetConnectionString("Redis");
             options.InstanceName = "fgc-catalog:";
         });
+
         // E. Autenticação JWT
         builder.Services.AddAuthentication("Bearer")
             .AddJwtBearer("Bearer", options =>
@@ -56,6 +64,9 @@ public partial class Program {
                     )
                 };
             });
+
+        builder.Services.AddAuthorization();
+
         // Swagger com suporte a JWT
         builder.Services.AddSwaggerGen(c =>
         {
@@ -67,26 +78,29 @@ public partial class Program {
                 Type = SecuritySchemeType.ApiKey,
                 Scheme = "Bearer"
             });
+
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
                 }
-            },
-            Array.Empty<string>()
-        }
             });
         });
+
         // MassTransit / RabbitMQ
         builder.Services.AddMassTransit(x =>
         {
             x.AddConsumer<UserCreatedEventConsumer>();
             x.AddConsumer<PaymentProcessedEventConsumer>();
+
             x.UsingRabbitMq((context, cfg) =>
             {
                 cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
@@ -94,34 +108,51 @@ public partial class Program {
                     h.Username("admin");
                     h.Password("admin");
                 });
+
                 cfg.ReceiveEndpoint("catalog-user-created-queue", e =>
                 {
                     e.ConfigureConsumer<UserCreatedEventConsumer>(context);
                 });
+
                 cfg.ReceiveEndpoint("catalog-payment-processed-queue", e =>
                 {
                     e.ConfigureConsumer<PaymentProcessedEventConsumer>(context);
                 });
             });
         });
+
         // F. MongoDB (para eventos de integração)
         builder.Services.AddMongoCatalog(builder.Configuration);
+
         // G. Elasticsearch
         builder.Services.AddElasticsearchCatalog(builder.Configuration);
+
         // ============================================================
+
         var app = builder.Build();
+
+        // ============================================================
+        // 2. MÉTRICAS (PROMETHEUS)
+        // ============================================================
+        app.UseHttpMetrics();
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-        app.UseHttpsRedirection();        
+
+        // /metrics fica fora do redirect para o scrape interno do cluster
+        app.UseWhen(ctx => !ctx.Request.Path.StartsWithSegments("/metrics"),
+            branch => branch.UseHttpsRedirection());
+
         // ============================================================
-        // 2. MIDDLEWARES DE SEGURANÇA
+        // 3. MIDDLEWARES DE SEGURANÇA
         // ============================================================
         app.UseAuthentication();
         app.UseAuthorization();
+
         app.MapControllers();
         app.MapGet("/health", async (IGameSearchService search) =>
         {
@@ -132,6 +163,10 @@ public partial class Program {
                 dependencies = new { elasticsearch = es ? "up" : "down" }
             });
         });
+
+        // Endpoint de métricas para o Prometheus
+        app.MapMetrics();
+
         using (var scope = app.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
@@ -140,8 +175,7 @@ public partial class Program {
                 context.Database.Migrate();
             }
         }
+
         app.Run();
     }
-} // Para testes de integração
-
-public partial class Program { } // Para testes de integração
+}
