@@ -159,7 +159,7 @@ public partial class Program
             var es = await search.IsAvailableAsync();
             return Results.Ok(new
             {
-                status = "Healthy-v2",
+                status = "Healthy-v3",
                 dependencies = new { elasticsearch = es ? "up" : "down" }
             });
         });
